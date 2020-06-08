@@ -33,8 +33,11 @@ class VideoReader:
     def __init__(self, video_path):
         self.video = imageio.get_reader(video_path)
         self.total_frames = self.video.count_frames()
-        self.cur_frame = 0
     
+    def __iter__(self):
+        self.cur_frame = 0
+        return self
+
     def __next__(self):
         if self.cur_frame < self.total_frames:
             im = self.video.get_data(self.cur_frame)
@@ -44,13 +47,19 @@ class VideoReader:
         else:
             raise StopIteration
 
+    def __delete__(self, video):
+        del(self.video)
 
-# videoreader = VideoReader('data/j.mp4') 
+
+videoreader = VideoReader('data/j.mp4')
+for frame in videoreader:
+    print(frame)
+    break
 # print(next(videoreader))
 
-ballreader = BallReader('data/balls.json', 'j.mp4')
-print(next(ballreader))
-print(next(ballreader))
-print(next(ballreader))
+# ballreader = BallReader('data/balls.json', 'j.mp4')
+# print(next(ballreader))
+# print(next(ballreader))
+# print(next(ballreader))
 
 # print(get_ball_bboxes('j.mp4', 'data/balls.json'))
