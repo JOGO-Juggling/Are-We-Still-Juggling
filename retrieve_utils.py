@@ -10,22 +10,25 @@ class BallReader:
     def __init__(self, data_path, video_name):
         self.data_path = data_path
         self.video_name = video_name
-        self.cur_frame = 0
 
         with open(self.data_path) as f:
             self.data = json.load(f)[self.video_name]
         
         self.max_frame = int(len(self.data) - 1)
+    
+    def __iter__(self):
+        self.cur_frame = 0
+        return self
 
     def __next__(self):
         if self.cur_frame < self.max_frame:
             if len(self.data[str(self.cur_frame)]) > 0:
                 del(self.data[str(self.cur_frame)][0]['confidence'])
-                return self.data[str(self.cur_frame)][0]
+                result = self.data[str(self.cur_frame)][0]
             else:
-                empty_dict = {}
-                return empty_dict
+                result = {}
             self.cur_frame += 1
+            return result
         else:
             raise StopIteration
 
@@ -51,15 +54,13 @@ class VideoReader:
         del(self.video)
 
 
-videoreader = VideoReader('data/j.mp4')
-for frame in videoreader:
-    print(frame)
-    break
-# print(next(videoreader))
+# # VideoReader iterable test
+# videoreader = VideoReader('data/j.mp4')
+# for frame in videoreader:
+#     print(frame)
+#     break
 
+# # BallReader iterable test
 # ballreader = BallReader('data/balls.json', 'j.mp4')
-# print(next(ballreader))
-# print(next(ballreader))
-# print(next(ballreader))
-
-# print(get_ball_bboxes('j.mp4', 'data/balls.json'))
+# for frame in ballreader:
+#     print(frame)
