@@ -5,31 +5,52 @@ import numpy as np
 def get_body_part_bboxes(video_path):
     pass
 
-def get_ball_bboxes(video_name, data_path):
-    with open(data_path) as f:
-        data = json.load(f)
 
-    frames = []
-    for i in range(int(len(data[video_name]) - 1)):
-        if len(data[video_name][str(i)]) > 0:
-            del(data[video_name][str(i)][0]['confidence'])
-            frames.append(data[video_name][str(i)][0])
+class BallReader:
+    def __init__(self, data_path, video_name):
+        self.data_path = data_path
+        self.video_name = video_name
+        self.cur_frame = 0
+
+        with open(self.data_path) as f:
+            self.data = json.load(f)[self.video_name]
+        
+        self.max_frame = int(len(self.data) - 1)
+
+    def __next__(self):
+        if self.cur_frame < self.max_frame:
+            if len(self.data[str(self.cur_frame)]) > 0:
+                del(self.data[str(self.cur_frame)][0]['confidence'])
+                return self.data[str(self.cur_frame)][0]
+            else:
+                empty_dict = {}
+                return empty_dict
+            self.cur_frame += 1
         else:
-            empty_dict = {}
-            frames.append(empty_dict)
+            raise StopIteration
 
-    return frames
+class VideoReader:
+    def __init__(self, video_path):
+        self.video = imageio.get_reader(video_path)
+        self.total_frames = self.video.count_frames()
+        self.cur_frame = 0
+    
+    def __next__(self):
+        if self.cur_frame < self.total_frames:
+            im = self.video.get_data(self.cur_frame)
+            self.cur_frame += 1
 
-def get_frames(video_path):
-    video = imageio.get_reader(video_path)
-    total_frames = video.count_frames()
-    frames = []
+            return im
+        else:
+            raise StopIteration
 
-    for i in range(total_frames):
-        im = video.get_data(i)
-        frames.append(im)
-            
-    return frames
 
+# videoreader = VideoReader('data/j.mp4') 
+# print(next(videoreader))
+
+ballreader = BallReader('data/balls.json', 'j.mp4')
+print(next(ballreader))
+print(next(ballreader))
+print(next(ballreader))
 
 # print(get_ball_bboxes('j.mp4', 'data/balls.json'))
