@@ -4,6 +4,7 @@ import numpy as np
 
 class BodyReader:
     def __init__(self, data_path, video_name):
+        ''' Retrieve data for specific video and determine the amount of frames '''
         self.data_path = data_path 
         self.video_name = ''.join(video_name.split('.')[:-1])
 
@@ -11,8 +12,6 @@ class BodyReader:
             self.data = json.load(f)[self.video_name]
         
         self.max_frame = int(len(self.data) - 1)
-
-        print(self.data)
 
     def __iter__(self):
         self.cur_frame = 0
