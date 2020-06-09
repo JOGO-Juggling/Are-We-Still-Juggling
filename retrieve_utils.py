@@ -2,8 +2,39 @@ import imageio
 import json
 import numpy as np
 
-def get_body_part_bboxes(video_path):
-    pass
+class BodyReader:
+    def __init__(self, data_path, video_name):
+        self.data_path = data_path 
+        self.video_name = ''.join(video_name.split('.')[:-1])
+
+        with open(self.data_path) as f:
+            self.data = json.load(f)[self.video_name]
+        
+        self.max_frame = int(len(self.data) - 1)
+
+        print(self.data)
+
+    def __iter__(self):
+        self.cur_frame = 0
+        return self
+
+    def __next__(self):
+        if self.cur_frame < self.max_frame:
+            if self.data[str(self.cur_frame)]['LAnkle']['x'] != -1 and self.data[str(self.cur_frame)]['RAnkle']['x'] != -1:
+                result = self.data[str(self.cur_frame)]
+            elif self.data[str(self.cur_frame)]['LAnkle']['x'] != -1 and self.data[str(self.cur_frame)]['RAnkle']['x'] == -1:
+                self.data[str(self.cur_frame)]['RAnkle'] = {}
+                result = self.data[str(self.cur_frame)]
+            elif self.data[str(self.cur_frame)]['LAnkle']['x'] == -1 and self.data[str(self.cur_frame)]['RAnkle']['x'] != -1: 
+                self.data[str(self.cur_frame)]['LAnkle'] = {}
+                result = self.data[str(self.cur_frame)]
+            else:
+                result = {}
+            self.cur_frame += 1
+            return result
+        else:
+            raise StopIteration
+
 
 
 class BallReader:
@@ -15,7 +46,7 @@ class BallReader:
             self.data = json.load(f)[self.video_name]
         
         self.max_frame = int(len(self.data) - 1)
-    
+        
     def __iter__(self):
         self.cur_frame = 0
         return self
@@ -64,3 +95,9 @@ class VideoReader:
 # ballreader = BallReader('data/balls.json', 'j.mp4')
 # for frame in ballreader:
 #     print(frame)
+
+# BodyReader iterable test
+bodyreader = BodyReader('data/keypoints.json', 'j.mp4')
+print(bodyreader)
+# for key in bodyreader:
+#     print(key)
