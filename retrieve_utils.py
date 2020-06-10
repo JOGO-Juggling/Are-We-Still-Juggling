@@ -34,8 +34,6 @@ class BodyReader:
         else:
             raise StopIteration
 
-
-
 class BallReader:
     def __init__(self, data_path, video_name):
         self.data_path = data_path
@@ -82,21 +80,3 @@ class VideoReader:
 
     def __delete__(self, video):
         del(self.video)
-
-
-# # VideoReader iterable test
-# videoreader = VideoReader('data/j.mp4')
-# for frame in videoreader:
-#     print(frame)
-#     break
-
-# # BallReader iterable test
-# ballreader = BallReader('data/balls.json', 'j.mp4')
-# for frame in ballreader:
-#     print(frame)
-
-# BodyReader iterable test
-bodyreader = BodyReader('data/keypoints.json', 'j.mp4')
-print(bodyreader)
-# for key in bodyreader:
-#     print(key)
