@@ -21,6 +21,5 @@ def draw_frame(frame, ball, body):
             x, y = int(left_foot['x']), int(left_foot['y'])
             frame = cv2.circle(frame, (x, y), 5, color, 2)
     
-    # Draw and return frame
-    cv2.imshow('Are We Still Juggling?', frame)
+    # Return
     return frame

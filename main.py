@@ -8,20 +8,20 @@ def main(video):
     videoreader = VideoReader(f'data/videos/{video}')
     bodyreader = BodyReader('data/keypoints.json', video)
     ballreader = BallReader('data/balls.json', video)
-
-    # fourcc = cv2.VideoWriter_fourcc('M', 'J', 'P', 'G')
-    # output = cv2.VideoWriter('output.mp4', fourcc, 10, (640, 480))
+    
+    output = cv2.VideoWriter('output.mp4', -1, 20.0, (640,480))
 
     for frame, ball, body in zip(videoreader, ballreader, bodyreader):
         frame = draw_frame(frame, ball, body)
-        # output.write(frame)
+        cv2.imshow('Are We Still Juggling?', frame)
+        output.write(frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
         sleep(0.016)
 
-    # output.release()
+    output.release()
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':
