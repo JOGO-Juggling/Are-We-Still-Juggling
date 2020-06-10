@@ -1,4 +1,8 @@
-import matplotlib.pyplot as plt
+import imageio
+from PIL import Image
+import json
+import numpy as np
+import cv2
 from retrieve_utils import BallReader
 from retrieve_utils import VideoReader
 
@@ -12,14 +16,9 @@ for ball_data in data_vid:
     use_data.append(ball_data)
 
 # Draw a square around the ball in each frame given the data
+# Draw a square around the ball in each frame given the data
 i = 0
 for frame in videoreader:
-    
-    # Create figure and axes
-    fig,ax = plt.subplots(1)
-
-    # Display the image
-    ax.imshow(frame)
     
     # Find x, y, width, height of each frame
     if len(use_data[i]) > 0:
@@ -28,10 +27,14 @@ for frame in videoreader:
         width = use_data[i]['width']
         height = use_data[i]['height']
         # Create a Rectangle patch
-        rect = plt.Rectangle((x,y),width,height,linewidth=1,edgecolor='r',facecolor='none')
-    
-        # Add the patch to the Axes
-        ax.add_patch(rect)
+        color = (0, 0, 255)
+        thickness = 2
         
+        frame = cv2.rectangle(frame, (x, y), (x+width, y+height), color, thickness)
+        
+    cv2.imshow("image", frame)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    cv2.waitKey(1)
     i += 1
-    plt.show()
+    break
