@@ -11,9 +11,9 @@ def main(video):
 
     # fourcc = cv2.VideoWriter_fourcc('M', 'J', 'P', 'G')
     # output = cv2.VideoWriter('output.mp4', fourcc, 10, (640, 480))
-
+    vector = [0,0,0,0,0]
     for frame, ball, body in zip(videoreader, ballreader, bodyreader):
-        frame = draw_frame(frame, ball, body)
+        frame, vector = draw_frame(frame, ball, body, vector)
         # output.write(frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
