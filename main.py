@@ -1,35 +1,28 @@
 from retrieve_utils import BodyReader, VideoReader, BallReader
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-import matplotlib.patches as patches
+from draw_utils import draw_frame
+import cv2
 
-fig = plt.figure()
-ax = fig.add_subplot(111)
+from time import sleep
 
-video = '0f272d8bfd2947a0b37f0deaf2fe20bd.MOV'
-videoreader = VideoReader(f'data/videos/{video}')
-bodyreader = BodyReader('data/keypoints.json', video)
-ballreader = BallReader('data/balls.json', video)
-frames = []
+def main(video):
+    videoreader = VideoReader(f'data/videos/{video}')
+    bodyreader = BodyReader('data/keypoints.json', video)
+    ballreader = BallReader('data/balls.json', video)
 
-for i, (frame, keypoints, ball) in enumerate(zip(videoreader, bodyreader, ballreader)):
-    result = [ax.imshow(frame, animated=True)]
-    if keypoints != {}:
-        if keypoints['RAnkle'] != {}:
-            x, y = int(keypoints['RAnkle']['x']), int(keypoints['RAnkle']['y'])
-            circle = patches.Circle((x, y), 10, color='r')
-            result.append(ax.add_patch(circle))
-        if keypoints['LAnkle'] != {}:
-            x, y = int(keypoints['LAnkle']['x']), int(keypoints['LAnkle']['y'])
-            circle = patches.Circle((x, y), 10, color='g')
-            result.append(ax.add_patch(circle))
-    if ball != {}:
-        x, y = int(ball['x']), int(ball['y'])
-        w, h = int(ball['width']), int(ball['height'])
-        square = patches.Rectangle((x, y), w, h, )
-        result.append(ax.add_patch(square))
-    frames.append(result)
+    # fourcc = cv2.VideoWriter_fourcc('M', 'J', 'P', 'G')
+    # output = cv2.VideoWriter('output.mp4', fourcc, 10, (640, 480))
 
-animation = animation.ArtistAnimation(fig, frames, interval=32)
-animation.save('result.mp4')
-# plt.show()
+    for frame, ball, body in zip(videoreader, ballreader, bodyreader):
+        frame = draw_frame(frame, ball, body)
+        # output.write(frame)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+        sleep(0.016)
+
+    # output.release()
+    cv2.destroyAllWindows()
+
+if __name__ == '__main__':
+    main('0f272d8bfd2947a0b37f0deaf2fe20bd.MOV')
