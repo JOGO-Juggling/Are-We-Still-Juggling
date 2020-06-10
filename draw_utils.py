@@ -23,7 +23,7 @@ def draw_frame(frame, ball, body, vector):
             x, y = int(left_foot['x']), int(left_foot['y'])
             frame = cv2.circle(frame, (x, y), 5, color, 2)
     if vector != {}:
-        frame = cv2.arrowedLine(frame, (600,250), (600, 250+vector[-1]-vector[0]), color)
+        frame = cv2.arrowedLine(frame, (550,250), (550, 250+vector[-1]-vector[0]), color)
     
     # Draw and return frame
     cv2.imshow('Are We Still Juggling?', frame)
