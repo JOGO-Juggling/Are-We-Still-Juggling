@@ -51,8 +51,9 @@ def main(data_path, video_path, out_path, display=True, true_time=True):
 
     # Set output if needed
     if out_path:
-        fourcc = cv2.VideoWriter_fourcc(*'MJPG')
-        output = cv2.VideoWriter(out_path, fourcc, 20.0, (640, 480))
+        out_shape = videoreader.shape[::-1]
+        fourcc = cv2.VideoWriter_fourcc('X', 'V', 'I', 'D')
+        output = cv2.VideoWriter(out_path, fourcc, 24, out_shape)
     
     # Setup trajectories
     ball_trajectory = [{}] * TRAJECTORY_LEN
@@ -79,16 +80,21 @@ def main(data_path, video_path, out_path, display=True, true_time=True):
             #     process_bounce(ball_trajectory, body_trajectory)
 
         # Draw frame
-        if display:
+        if display or out_path:
             frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
             frame = draw_frame(frame, ball, body, ball_dy, bounce)
-            cv2.imshow('Are We Still Juggling?', frame)
 
-            if true_time:
-                sleep(.032)
+            # Draw frame to screen
+            if display:
+                cv2.imshow('Are We Still Juggling?', frame)
 
-        if out_path:
-            output.write(frame)
+                if true_time:
+                    sleep(.032)
+            
+            # Draw frame to output
+            if out_path:
+                frame = cv2.resize(frame, out_shape)
+                output.write(frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -121,7 +127,7 @@ if __name__ == '__main__':
                         help='Path to the data directory', metavar='DIR')
     parser.add_argument('--video', type=file_type, required=True,
                         help='Path to the video in the data dir.', metavar='FILE')
-    parser.add_argument('--output', type=file_type, required=False,
+    parser.add_argument('--output', type=str, required=False,
                         help='Path to the output video.', metavar='FILE')
     parser.add_argument('--display', type=bool, required=False,
                         help='Set output to on or off.')
