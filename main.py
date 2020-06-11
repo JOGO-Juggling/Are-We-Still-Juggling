@@ -7,8 +7,11 @@ import argparse
 
 from time import sleep
 
-def calc_dy(prev_y, curr_y):
-    return curr_y - prev_y
+def process_ball_trajectory():
+    pass
+
+def process_bounce():
+    pass
 
 def main(data_path, video_path, out_path):
     videoname = video_path.split('/')[-1]
@@ -20,7 +23,8 @@ def main(data_path, video_path, out_path):
 
     # Set output if needed
     if out_path:
-        output = cv2.VideoWriter(out_path, -1, 20.0, (640,480))
+        fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+        output = cv2.VideoWriter(out_path, fourcc, 20.0, (640, 480))
     
     prev_ball_y = 0
 
@@ -28,7 +32,7 @@ def main(data_path, video_path, out_path):
     for frame, ball, body in zip(videoreader, ballreader, bodyreader):
         # Calculate vertical ball trajectory
         if ball != {}:
-            ball_dy = calc_dy(prev_ball_y, ball['y'])
+            ball_dy = ball['y'] - prev_ball_y
             prev_ball_y = ball['y']
 
         # Draw frame
