@@ -10,8 +10,24 @@ from time import sleep
 def process_ball_trajectory():
     pass
 
-def process_bounce():
-    pass
+def process_bounce(ball_trajectory, body_trajectory):
+    '''Given the trajectory of the ball and the body during a bounce,
+    determines whether the ball bounces on the ground or a body part.'''
+
+    threshold = 0.5
+    min_frame = np.argmin(ball_trajectory)
+
+    ball_min, body_min = ball_trajectory[min_frame], body_trajectory[min_frame]
+
+    l_body = (body_min['LAnkle']['x'], body_min['LAnkle']['y'])
+    r_body = (body_min['RAnkle']['x'], body_min['RAnkle']['y']) 
+
+    ball_pos = (ball_min['x'], ball_min['y'])
+
+    if np.linalg.norm([ball_pos, l_body ]) < threshold or np.linalg.norm([ball_pos, r_body ]) < threshold:
+        return True
+    else:
+        return False
 
 def main(data_path, video_path, out_path):
     videoname = video_path.split('/')[-1]
