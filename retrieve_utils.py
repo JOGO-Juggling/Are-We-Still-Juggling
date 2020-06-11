@@ -64,7 +64,8 @@ class VideoReader:
     def __init__(self, video_path):
         self.video = imageio.get_reader(video_path)
         self.total_frames = self.video.count_frames()
-    
+        self.shape = self.video.get_data(0).shape[:-1]
+
     def __iter__(self):
         self.cur_frame = 0
         return self
@@ -80,3 +81,6 @@ class VideoReader:
 
     def __delete__(self, video):
         del(self.video)
+
+videoreader = VideoReader('data/j.mp4')
+print(videoreader)
