@@ -8,8 +8,9 @@ import numpy as np
 
 import time
 from time import sleep
+from math import hypot
 
-TRAJECTORY_LEN = 4
+TRAJECTORY_LEN = 3
 
 def process_ball_trajectory(ball_traj):
     '''Detect bounces in the ball trajectory'''
@@ -20,26 +21,33 @@ def process_ball_trajectory(ball_traj):
 
     # Detect if the dy 'goes trough zero'
     change = np.where(np.diff(np.sign(dy_trajectory)))[0]
-    return len(change) > 0 and dy_trajectory[0] < 0, change
+    return (len(change) > 0 and dy_trajectory[0] < 0), change
 
-def process_bounce(ball_traj, body_traj):
+def process_bounce(ball_traj, body_traj, frame_shape):
     '''Given the trajectory of the ball and the body during a bounce,
     determines whether the ball bounces on the ground or a body part.'''
 
-    threshold = 0.5
-    min_frame = np.argmin(ball_traj)
+    threshold = 0.15
 
-    ball_min, body_min = ball_traj[min_frame], body_traj[min_frame]
+    try:
+        ball = ball_traj[0]
+        r_ankle = body_traj[0]['RAnkle']
+        l_ankle = body_traj[0]['LAnkle']
 
-    l_body = (body_min['LAnkle']['x'], body_min['LAnkle']['y'])
-    r_body = (body_min['RAnkle']['x'], body_min['RAnkle']['y']) 
+        ball_norm = np.divide((ball['x'], ball['y']), frame_shape)
+        r_ankle_norm = np.divide((r_ankle['x'], r_ankle['y']), frame_shape)
+        l_ankle_norm = np.divide((l_ankle['x'], l_ankle['y']), frame_shape)
 
-    ball_pos = (ball_min['x'], ball_min['y'])
+        r_dist = hypot(ball_norm[0] - r_ankle_norm[0], ball_norm[1] - r_ankle_norm[1])
+        l_dist = hypot(ball_norm[0] - l_ankle_norm[0], ball_norm[1] - l_ankle_norm[1])
 
-    if np.linalg.norm([ball_pos, l_body ]) < threshold or np.linalg.norm([ball_pos, r_body ]) < threshold:
-        return True
-    else:
-        return False
+        if r_dist < threshold or l_dist < threshold:
+            if r_dist < l_dist:
+                return 1
+            return 2
+        return 0
+    except:
+        return 0
 
 def main(data_path, video_path, out_path, display=True, true_time=True):
     videoname = video_path.split('/')[-1]
@@ -48,20 +56,24 @@ def main(data_path, video_path, out_path, display=True, true_time=True):
     videoreader = VideoReader(video_path)
     bodyreader = BodyReader(f'{data_path}/keypoints.json', videoname)
     ballreader = BallReader(f'{data_path}/balls.json', videoname)
+    frame_shape = videoreader.shape[::-1]
 
     # Set output if needed
     if out_path:
-        out_shape = videoreader.shape[::-1]
         fourcc = cv2.VideoWriter_fourcc('X', 'V', 'I', 'D')
-        output = cv2.VideoWriter(out_path, fourcc, 24, out_shape)
+        output = cv2.VideoWriter(out_path, fourcc, 24, frame_shape)
     
     # Setup trajectories
     ball_trajectory = [{}] * TRAJECTORY_LEN
     body_trajectory = [{}] * TRAJECTORY_LEN
     bounce = False
+    foot = 0
     ball_dy = 0
 
     start_time = time.time()
+    bounces = 0
+
+    juggling = True
 
     # Loop over datastreams
     for frame, ball, body in zip(videoreader, ballreader, bodyreader):
@@ -76,13 +88,21 @@ def main(data_path, video_path, out_path, display=True, true_time=True):
             ball_dy = ball['y'] - prev_ball['y']
             bounce, x = process_ball_trajectory(ball_trajectory)
 
-            # if bounce:
-            #     process_bounce(ball_trajectory, body_trajectory)
+            if bounce:
+                bounces += 1
+                foot = process_bounce(ball_trajectory, body_trajectory, frame_shape)
+
+                if foot is 0:
+                    juggling = False
+                else:
+                    juggling = True
+            else:
+                foot = 0
 
         # Draw frame
         if display or out_path:
             frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-            frame = draw_frame(frame, ball, body, ball_dy, bounce)
+            frame = draw_frame(frame, ball, body, ball_dy, foot, juggling)
 
             # Draw frame to screen
             if display:
@@ -93,7 +113,7 @@ def main(data_path, video_path, out_path, display=True, true_time=True):
             
             # Draw frame to output
             if out_path:
-                frame = cv2.resize(frame, out_shape)
+                frame = cv2.resize(frame, frame_shape)
                 output.write(frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
