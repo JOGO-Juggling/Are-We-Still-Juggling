@@ -56,7 +56,7 @@ def main(data_path, video_path, out_path, display=True, true_time=True):
     videoreader = VideoReader(video_path)
     bodyreader = BodyReader(f'{data_path}/keypoints.json', videoname)
     ballreader = BallReader(f'{data_path}/balls.json', videoname)
-    frame_shape = videoreader.shape[::-1]
+    frame_shape = videoreader.shape
 
     # Set output if needed
     if out_path:
@@ -101,7 +101,7 @@ def main(data_path, video_path, out_path, display=True, true_time=True):
 
         # Draw frame
         if display or out_path:
-            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            frame = frame[1]
             frame = draw_frame(frame, ball, body, ball_dy, foot, juggling)
 
             # Draw frame to screen
