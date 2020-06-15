@@ -1,6 +1,7 @@
 import imageio
 import json
 import numpy as np
+import cv2
 
 class BodyReader:
     def __init__(self, data_path, video_name):
@@ -62,9 +63,13 @@ class BallReader:
 
 class VideoReader:
     def __init__(self, video_path):
-        self.video = imageio.get_reader(video_path)
-        self.total_frames = self.video.count_frames()
-        self.shape = self.video.get_data(0).shape[:-1]
+
+        self.video = cv2.VideoCapture(video_path)
+        self.total_frames = int(self.video.get(cv2.CAP_PROP_FRAME_COUNT))
+        width = self.video.get(cv2.CAP_PROP_FRAME_WIDTH)
+        height = self.video.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        self.shape = (int(width), int(height))
+        
 
     def __iter__(self):
         self.cur_frame = 0
@@ -72,15 +77,11 @@ class VideoReader:
 
     def __next__(self):
         if self.cur_frame < self.total_frames:
-            im = self.video.get_data(self.cur_frame)
             self.cur_frame += 1
 
-            return im
+            return self.video.read()
         else:
             raise StopIteration
 
     def __delete__(self, video):
         del(self.video)
-
-videoreader = VideoReader('data/j.mp4')
-print(videoreader)
