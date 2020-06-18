@@ -17,11 +17,11 @@ def process_ball_trajectory(ball_traj):
 
     # Calculate dy over measured trajectory
     y_trajectory = [ball['y'] for ball in ball_traj if ball != {}]
-    dy_trajectory = [dy - pdy for dy, pdy in zip(y_trajectory[:-1], y_trajectory[1:])]
+    dy_trajectory = [y - py for y, py in zip(y_trajectory[:-1], y_trajectory[1:])]
 
     # Detect if the dy 'goes trough zero'
     change = np.where(np.diff(np.sign(dy_trajectory)))[0]
-    return (len(change) > 0 and dy_trajectory[0] < 0), change
+    return (len(change) > 0 and dy_trajectory[0] < 0)
 
 def process_bounce(ball_traj, body_traj, frame_shape):
     '''Given the trajectory of the ball and the body during a bounce,
@@ -34,20 +34,24 @@ def process_bounce(ball_traj, body_traj, frame_shape):
         r_ankle = body_traj[0]['RAnkle']
         l_ankle = body_traj[0]['LAnkle']
 
-        ball_norm = np.divide((ball['x'], ball['y']), frame_shape)
+        ball_x = ball['x'] + 0.5 * ball['width']
+        ball_y = ball['y'] + 0.5 * ball['height']
+
+        ball_norm = np.divide((ball_x, ball_y), frame_shape)
         r_ankle_norm = np.divide((r_ankle['x'], r_ankle['y']), frame_shape)
         l_ankle_norm = np.divide((l_ankle['x'], l_ankle['y']), frame_shape)
 
         r_dist = hypot(ball_norm[0] - r_ankle_norm[0], ball_norm[1] - r_ankle_norm[1])
         l_dist = hypot(ball_norm[0] - l_ankle_norm[0], ball_norm[1] - l_ankle_norm[1])
 
-        if r_dist < threshold or l_dist < threshold:
-            if r_dist < l_dist:
-                return 1
-            return 2
-        return 0
+        dists = [r_dist, l_dist]
+        min_dist = np.argmin(dists)
+
+        if dists[min_dist] < threshold:
+            return min_dist + 1, 1 - dists[min_dist] / threshold
+        return 0, 1 - dists[min_dist] / threshold
     except:
-        return 0
+        return 0, 0
 
 def main(data_path, video_path, out_path, display=True, true_time=True):
     videoname = video_path.split('/')[-1]
@@ -57,17 +61,21 @@ def main(data_path, video_path, out_path, display=True, true_time=True):
     bodyreader = BodyReader(f'{data_path}/keypoints.json', videoname)
     ballreader = BallReader(f'{data_path}/balls.json', videoname)
     frame_shape = videoreader.shape
+    fps = videoreader.fps
 
     # Set output if needed
     if out_path:
         fourcc = cv2.VideoWriter_fourcc('X', 'V', 'I', 'D')
-        output = cv2.VideoWriter(out_path, fourcc, 24, frame_shape)
+        output = cv2.VideoWriter(out_path, fourcc, fps, frame_shape)
     
     # Setup trajectories
     ball_trajectory = [{}] * TRAJECTORY_LEN
     body_trajectory = [{}] * TRAJECTORY_LEN
+
     bounce = False
+    confidence = 0.0
     foot = 0
+
     ball_dy = 0
 
     start_time = time.time()
@@ -77,39 +85,41 @@ def main(data_path, video_path, out_path, display=True, true_time=True):
 
     # Loop over datastreams
     for frame, ball, body in zip(videoreader, ballreader, bodyreader):
-        prev_ball = ball_trajectory[-1]
         ball_trajectory.pop(0)
         body_trajectory.pop(0)
 
         ball_trajectory.append(ball)
         body_trajectory.append(body)
 
-        if ball != {} and prev_ball != {}:
-            ball_dy = ball['y'] - prev_ball['y']
-            bounce, x = process_ball_trajectory(ball_trajectory)
+        bounce = process_ball_trajectory(ball_trajectory)
 
-            if bounce:
-                bounces += 1
-                foot = process_bounce(ball_trajectory, body_trajectory, frame_shape)
+        if bounce:
+            bounce_check = True
+            bounces += 1
+            
+            foot, confidence = process_bounce(ball_trajectory, body_trajectory, frame_shape)
 
-                if foot is 0:
-                    juggling = False
-                else:
-                    juggling = True
+            if foot is 0:
+                juggling = False
             else:
-                foot = 0
+                juggling = True
+        else:
+            foot = 0
 
         # Draw frame
         if display or out_path:
+            if ball != {} and ball_trajectory[-1] != {}:
+                ball_dy = ball['y'] - ball_trajectory[-1]['y']
+
             frame = frame[1]
-            frame = draw_frame(frame, ball, body, ball_dy, foot, juggling)
+            frame = draw_frame(frame, ball, body, ball_dy, foot, juggling, confidence)
 
             # Draw frame to screen
             if display:
                 cv2.imshow('Are We Still Juggling?', frame)
 
                 if true_time:
-                    sleep(.032)
+                    sleep(int(1000 / fps) / 1000)
             
             # Draw frame to output
             if out_path:

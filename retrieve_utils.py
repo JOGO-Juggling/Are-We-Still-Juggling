@@ -69,7 +69,7 @@ class VideoReader:
         width = self.video.get(cv2.CAP_PROP_FRAME_WIDTH)
         height = self.video.get(cv2.CAP_PROP_FRAME_HEIGHT)
         self.shape = (int(width), int(height))
-        
+        self.fps = self.video.get(cv2.CAP_PROP_FPS)
 
     def __iter__(self):
         self.cur_frame = 0
