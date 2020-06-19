@@ -76,6 +76,8 @@ def main(data_path, video_path, out_path, display=True, true_time=True):
     body_trajectory = [{}] * TRAJECTORY_LEN
     conf_history = [0.0] * HISTORY_LEN
 
+    prev_ball = []
+
     bounce = False
     mean_confidence = 0.0
     foot = 0
@@ -92,7 +94,14 @@ def main(data_path, video_path, out_path, display=True, true_time=True):
         ball_trajectory.pop(0)
         body_trajectory.pop(0)
 
-        ball_trajectory.append(ball)
+        if len(ball) > 0:
+            prev_ball = ball
+        
+        if len(ball) is 0:
+            ball_trajectory.append(prev_ball)
+        else:
+            ball_trajectory.append(ball)
+        
         body_trajectory.append(body)
 
         bounce = process_ball_trajectory(ball_trajectory)
