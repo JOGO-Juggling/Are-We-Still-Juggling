@@ -11,6 +11,7 @@ from time import sleep
 from math import hypot
 
 TRAJECTORY_LEN = 3
+HISTORY_LEN = 7
 
 def process_ball_trajectory(ball_traj):
     '''Detect bounces in the ball trajectory'''
@@ -27,8 +28,6 @@ def process_bounce(ball_traj, body_traj, frame_shape):
     '''Given the trajectory of the ball and the body during a bounce,
     determines whether the ball bounces on the ground or a body part.'''
 
-    threshold = 0.15
-
     try:
         ball = ball_traj[0]
         r_ankle = body_traj[0]['RAnkle']
@@ -40,6 +39,14 @@ def process_bounce(ball_traj, body_traj, frame_shape):
         ball_norm = np.divide((ball_x, ball_y), frame_shape)
         r_ankle_norm = np.divide((r_ankle['x'], r_ankle['y']), frame_shape)
         l_ankle_norm = np.divide((l_ankle['x'], l_ankle['y']), frame_shape)
+
+        # Threshold based on distance between feet
+        threshold = hypot(r_ankle_norm[0] - l_ankle_norm[0], r_ankle_norm[1] - l_ankle_norm[0])
+        threshold /= 2.2
+
+        # Minimum threshold
+        if threshold < 0.13:
+            threshold = 0.13
 
         r_dist = hypot(ball_norm[0] - r_ankle_norm[0], ball_norm[1] - r_ankle_norm[1])
         l_dist = hypot(ball_norm[0] - l_ankle_norm[0], ball_norm[1] - l_ankle_norm[1])
@@ -71,9 +78,12 @@ def main(data_path, video_path, out_path, display=True, true_time=True):
     # Setup trajectories
     ball_trajectory = [{}] * TRAJECTORY_LEN
     body_trajectory = [{}] * TRAJECTORY_LEN
+    conf_history = [0.0] * HISTORY_LEN
+
+    prev_ball = []
 
     bounce = False
-    confidence = 0.0
+    mean_confidence = 0.0
     foot = 0
 
     ball_dy = 0
@@ -88,38 +98,51 @@ def main(data_path, video_path, out_path, display=True, true_time=True):
         ball_trajectory.pop(0)
         body_trajectory.pop(0)
 
-        ball_trajectory.append(ball)
+        if len(ball) > 0:
+            prev_ball = ball
+        
+        if len(ball) is 0:
+            ball_trajectory.append(prev_ball)
+        else:
+            ball_trajectory.append(ball)
+        
         body_trajectory.append(body)
 
         bounce = process_ball_trajectory(ball_trajectory)
 
+        # Process bounce when bounce detected
         if bounce:
-            bounce_check = True
-            bounces += 1
+            conf_history.pop(0)
             
             foot, confidence = process_bounce(ball_trajectory, body_trajectory, frame_shape)
+            if foot > 0:
+                bounces += 1
 
-            if foot is 0:
-                juggling = False
-            else:
-                juggling = True
+            # Process foot detection result
+            conf_history.append(confidence)
+            
+            # Set juggling to false if past n bounces are not on body
+            mean_confidence = np.mean(conf_history)
+            juggling = mean_confidence > 0
+            mean_confidence = np.around(mean_confidence, decimals=2)
         else:
             foot = 0
 
         # Draw frame
         if display or out_path:
-            if ball != {} and ball_trajectory[-1] != {}:
-                ball_dy = ball['y'] - ball_trajectory[-1]['y']
+            if ball != {} and ball_trajectory[-2] != {}:
+                ball_dy = ball['y'] - ball_trajectory[-2]['y']
 
             frame = frame[1]
-            frame = draw_frame(frame, ball, body, ball_dy, foot, juggling, confidence)
+            frame = draw_frame(frame, ball, body, ball_dy, foot,
+                                juggling, mean_confidence, bounces)
 
             # Draw frame to screen
             if display:
                 cv2.imshow('Are We Still Juggling?', frame)
 
                 if true_time:
-                    sleep(int(1000 / fps) / 1000)
+                    sleep(int(1000 / fps) / 2000)
             
             # Draw frame to output
             if out_path:

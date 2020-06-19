@@ -1,21 +1,23 @@
 import cv2
 
-def draw_frame(frame, ball, body, ball_dy, foot, juggling, confidence):
+def draw_frame(frame, ball, body, ball_dy, foot, juggling, confidence, bounces):
     '''Get a frame with ball and body data as input, and display in ocv window'''
     b_color = (0, 255, 255)
     f_color = (255, 0, 255)
 
     frame = cv2.putText(frame, f'JUGGLING: {juggling}', (20, 40),
-                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
     frame = cv2.putText(frame, f'CONFIDENCE: {confidence}', (20, 80),
-                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-    
-    if foot is 1:
-        frame = cv2.putText(frame, 'RIGHT', (20, 120),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-    elif foot is 2:
-        frame = cv2.putText(frame, 'LEFT', (20, 120),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
+    frame = cv2.putText(frame, f'BOUNCES: {bounces}', (20, 120),
+                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
+
+    if foot == 1:
+        frame = cv2.putText(frame, 'RIGHT', (20, 160),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
+    elif foot == 2:
+        frame = cv2.putText(frame, 'LEFT', (20, 160),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
 
     # Add ball if information is given
     if ball != {}:
