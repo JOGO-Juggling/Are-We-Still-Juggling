@@ -69,8 +69,9 @@ class BallReader:
             raise StopIteration
 
 class VideoReader:
-    ''' Retrieve data for specific video and determine the amount of frames '''
+    ''' Retrieve data for specific video and iterate over frames '''
     def __init__(self, video_path):
+        # Load video by name and list its properties
         self.video = cv2.VideoCapture(video_path)
         self.total_frames = int(self.video.get(cv2.CAP_PROP_FRAME_COUNT))
         width = self.video.get(cv2.CAP_PROP_FRAME_WIDTH)
@@ -79,10 +80,12 @@ class VideoReader:
         self.fps = self.video.get(cv2.CAP_PROP_FPS)
 
     def __iter__(self):
+        # Create iterable
         self.cur_frame = 0
         return self
 
     def __next__(self):
+        # Iterate over frames
         if self.cur_frame < self.total_frames:
             self.cur_frame += 1
 
