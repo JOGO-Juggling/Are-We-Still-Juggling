@@ -42,7 +42,11 @@ def process_bounce(ball_traj, body_traj, frame_shape):
 
         # Threshold based on distance between feet
         threshold = hypot(r_ankle_norm[0] - l_ankle_norm[0], r_ankle_norm[1] - l_ankle_norm[0])
-        threshold /= 2
+        threshold /= 2.2
+
+        # Minimum threshold
+        if threshold < 0.13:
+            threshold = 0.13
 
         r_dist = hypot(ball_norm[0] - r_ankle_norm[0], ball_norm[1] - r_ankle_norm[1])
         l_dist = hypot(ball_norm[0] - l_ankle_norm[0], ball_norm[1] - l_ankle_norm[1])
@@ -53,7 +57,7 @@ def process_bounce(ball_traj, body_traj, frame_shape):
         if dists[min_dist] < threshold:
             return min_dist + 1, 1 - dists[min_dist] / threshold
         return 0, 1 - dists[min_dist] / threshold
-    except Exception as e:
+    except:
         return 0, 0
 
 def main(data_path, video_path, out_path, display=True, true_time=True):
@@ -109,9 +113,10 @@ def main(data_path, video_path, out_path, display=True, true_time=True):
         # Process bounce when bounce detected
         if bounce:
             conf_history.pop(0)
-            bounces += 1
             
             foot, confidence = process_bounce(ball_trajectory, body_trajectory, frame_shape)
+            if foot > 0:
+                bounces += 1
 
             # Process foot detection result
             conf_history.append(confidence)
@@ -129,7 +134,8 @@ def main(data_path, video_path, out_path, display=True, true_time=True):
                 ball_dy = ball['y'] - ball_trajectory[-2]['y']
 
             frame = frame[1]
-            frame = draw_frame(frame, ball, body, ball_dy, foot, juggling, mean_confidence)
+            frame = draw_frame(frame, ball, body, ball_dy, foot,
+                                juggling, mean_confidence, bounces)
 
             # Draw frame to screen
             if display:
