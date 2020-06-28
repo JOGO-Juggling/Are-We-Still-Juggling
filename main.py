@@ -10,7 +10,10 @@ import time
 from time import sleep
 from math import hypot
 
+# Number of frames to take into accoun for bounce.
 TRAJECTORY_LEN = 3
+
+# Number of frames used for the average confidence.
 HISTORY_LEN = 7
 
 def process_ball_trajectory(ball_traj):
@@ -29,6 +32,7 @@ def process_bounce(ball_traj, body_traj, frame_shape):
     determines whether the ball bounces on the ground or a body part.'''
 
     try:
+        # Retrieve data if present and normalise locations to frame-size
         ball = ball_traj[0]
         r_ankle = body_traj[0]['RAnkle']
         l_ankle = body_traj[0]['LAnkle']
@@ -48,19 +52,26 @@ def process_bounce(ball_traj, body_traj, frame_shape):
         if threshold < 0.13:
             threshold = 0.13
 
+        # Calculate distances between ball and feet
         r_dist = hypot(ball_norm[0] - r_ankle_norm[0], ball_norm[1] - r_ankle_norm[1])
         l_dist = hypot(ball_norm[0] - l_ankle_norm[0], ball_norm[1] - l_ankle_norm[1])
 
         dists = [r_dist, l_dist]
         min_dist = np.argmin(dists)
 
+        confidence = 1 - dists[min_dist] / threshold
+
+        # Determine bounce
         if dists[min_dist] < threshold:
-            return min_dist + 1, 1 - dists[min_dist] / threshold
-        return 0, 1 - dists[min_dist] / threshold
+            return min_dist + 1, confidence
+        return 0, confidence
     except:
+        # Return no foot if data is not available
         return 0, 0
 
 def main(data_path, video_path, out_path, display=True, true_time=True):
+    ''' Detects bounces and classifies them as either on the foor or not 
+        using the video and data provided in the parameters. '''
     videoname = video_path.split('/')[-1]
 
     # Open video and datastreams
@@ -162,6 +173,7 @@ def main(data_path, video_path, out_path, display=True, true_time=True):
         output.release()
     cv2.destroyAllWindows()
 
+# Data types to parse command line arguments
 def dir_type(path):
     if os.path.isdir(path):
         return path
@@ -175,6 +187,7 @@ def file_type(path):
         raise FileNotFoundError(path)
 
 if __name__ == '__main__':
+    # Process command line arguments. 
     parser = argparse.ArgumentParser(description='Process juggling videos.')
     parser.add_argument('--data', type=dir_type, required=True,
                         help='Path to the data directory', metavar='DIR')
@@ -188,6 +201,7 @@ if __name__ == '__main__':
                         help='Maximize FPS or use video FPS')
     args = parser.parse_args()
 
+    # Truetime can only be set if display is also set.
     if not args.display:
         args.truetime = False
     main(args.data, args.video, args.output, args.display, args.truetime)
