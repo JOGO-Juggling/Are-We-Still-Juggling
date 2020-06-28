@@ -20,7 +20,7 @@ def process_ball_trajectory(ball_traj):
     '''Detect bounces in the ball trajectory'''
 
     # Calculate dy over measured trajectory
-    y_trajectory = [ball['y'] for ball in ball_traj if ball != {}]
+    y_trajectory = [ball['y'] for ball in ball_traj if ball != {} and ball != []]
     dy_trajectory = [y - py for y, py in zip(y_trajectory[:-1], y_trajectory[1:])]
 
     # Detect if the dy 'goes trough zero'
@@ -141,7 +141,7 @@ def main(data_path, video_path, out_path, display=True, true_time=True):
 
         # Draw frame
         if display or out_path:
-            if ball != {} and ball_trajectory[-2] != {}:
+            if ball != {} and ball != [] and ball_trajectory[-2] != {} and ball_trajectory[-2] != []:
                 ball_dy = ball['y'] - ball_trajectory[-2]['y']
 
             frame = frame[1]
